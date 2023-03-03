@@ -9,7 +9,7 @@ from threading import Thread, Lock, Event
 class Brelshaza:
     def __init__(self, countdown_label, meteor_label, floor_label):
         self.berserk_mins = 20
-        self.timer = Countdown(num_mins=self.berserk_mins, num_secs=0, text=countdown_label)
+        self.timer = Countdown(num_mins=self.berserk_mins, label=countdown_label)
         self.timer_label = countdown_label
         self.meteor_label = meteor_label
         self.floor_label = floor_label
@@ -26,8 +26,11 @@ class Brelshaza:
     # start the timer in a thread
     def start_timer(self):
         if self.timer_thread is None:
-            self.timer.stop_flag.clear()
+            # clear stop flags to allow threads to run properly
+            self.timer.clear_stop_flag()
             self.meteor_stop_flag.clear()
+
+            # create and run the timer and meteor threads that will run in the background
             self.timer_thread = Thread(target=self.timer.start_countdown)
             self.timer_thread.daemon = True
 
@@ -40,15 +43,16 @@ class Brelshaza:
     # kill the thread running the timer and reset the berserk timer
     def reset_timer(self):
         if self.timer_thread is not None:
-            self.timer.stop_flag.set()
+            # set the timer and meteor stop flags and wait for the threads to stop
+            self.timer.set_stop_flag()
             self.meteor_stop_flag.set()
             self.timer_thread.join()
             self.meteor_thread.join()
             self.timer_thread = None
             self.meteor_thread = None
 
-            self.timer.min = self.berserk_mins
-            self.timer.sec = 0
+            # reset all values
+            self.timer.reset_timer(self.berserk_mins)
             self.next_meteor_min = 0
             self.next_meteor_sec = 0
             self.next_floor_min = 0
@@ -61,11 +65,14 @@ class Brelshaza:
     # calculate and display the next time meteors will drop (1 minute)
     def drop_meteor(self):
         while True:
+            # compare the timer to when next meteor will drop every second
             if self.timer.get_min() * 60 + self.timer.get_sec() <= self.next_meteor_min * 60 + self.next_meteor_sec:
+                # use a lock to prevent user input and thread update from interfering with each other
                 with self.meteor_lock:
                     self.next_meteor_min = self.timer.get_min() - 1
                     self.next_meteor_sec = self.timer.get_sec()
 
+                    # automatically stop the thread once the timer reaches 0
                     if self.next_meteor_min < 0:
                         self.next_meteor_min = 0
                         self.next_meteor_sec = 0
@@ -92,18 +99,27 @@ class Brelshaza:
 
         self.set_floor_text()
 
+    # drop a yellow meteor, which resets the meteor timer and breaks the floor
+    def drop_yellow_meteor(self):
+        self.set_meteor_time()
+        self.break_floor()
+
+    # calculate the time until the next meteor drops
     def set_meteor_time(self):
+        # use a lock to prevent user input and thread update from interfering with each other
         with self.meteor_lock:
             self.next_meteor_min = self.timer.get_min() - 1
             self.next_meteor_sec = self.timer.get_sec()
             self.meteor_label.setText(f"<h3>Next meteor drops at: {self.next_meteor_min:02d}:{self.next_meteor_sec:02d}</h3>")
 
+    # re-set the text for the next meteor time
     def set_meteor_text(self, reset=False):
         if reset:
             self.meteor_label.setText("")
         else:
             self.meteor_label.setText(f"<h3>Next meteor drops at: {self.next_meteor_min:02d}:{self.next_meteor_sec:02d}</h3>")
 
+    # re-set the text for next floor time
     def set_floor_text(self, reset=False):
         if reset:
             self.floor_label.setText("")
@@ -133,32 +149,48 @@ def main():
     boss = Brelshaza(countdown_label=countdown_label, meteor_label=meteor_label, floor_label=floor_label)
 
     # create the buttons to control the timer
+    start_timer = QPushButton("Start")
+    start_timer.clicked.connect(boss.start_timer)
+    start_timer.setFixedHeight(25)
+
+    reset_timer = QPushButton("Reset")
+    reset_timer.clicked.connect(boss.reset_timer)
+    reset_timer.setFixedHeight(25)
+
+    # put the timer buttons side by side
     timer_buttons = QWidget()
     timer_buttons_layout = QHBoxLayout(timer_buttons)
-    start_timer = QPushButton("Start")
-    reset_timer = QPushButton("Reset")
-    start_timer.clicked.connect(boss.start_timer)
-    reset_timer.clicked.connect(boss.reset_timer)
-    start_timer.setFixedHeight(25)
-    reset_timer.setFixedHeight(25)
     timer_buttons_layout.addWidget(start_timer)
     timer_buttons_layout.addWidget(reset_timer)
+    timer_buttons_layout.setContentsMargins(0, 0, 0, 0)
 
     # create the buttons to calculate new times
+    yellow_meteor_button = QPushButton("Yellow Meteor")
+    yellow_meteor_button.clicked.connect(boss.drop_yellow_meteor)
+    yellow_meteor_button.setFixedHeight(40)
+
     meteor_button = QPushButton("Drop Meteor")
-    floor_button = QPushButton("Break Floor")
     meteor_button.clicked.connect(boss.set_meteor_time)
+    meteor_button.setFixedHeight(30)
+
+    floor_button = QPushButton("Break Floor")
     floor_button.clicked.connect(boss.break_floor)
-    meteor_button.setFixedHeight(40)
-    floor_button.setFixedHeight(40)
+    floor_button.setFixedHeight(30)
+
+    # put the drop meteor and break floor buttons side by side
+    sub_buttons = QWidget()
+    sub_buttons_layout = QHBoxLayout(sub_buttons)
+    sub_buttons_layout.addWidget(meteor_button)
+    sub_buttons_layout.addWidget(floor_button)
+    sub_buttons_layout.setContentsMargins(0, 0, 0, 0)
 
     # structure the GUI
     layout.addWidget(timer_buttons)
     layout.addWidget(countdown_label)
     layout.addWidget(meteor_label)
     layout.addWidget(floor_label)
-    layout.addWidget(meteor_button)
-    layout.addWidget(floor_button)
+    layout.addWidget(yellow_meteor_button)
+    layout.addWidget(sub_buttons)
     window.setLayout(layout)
     window.show()
     sys.exit(app.exec())
