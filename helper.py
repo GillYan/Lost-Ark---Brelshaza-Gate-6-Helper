@@ -4,7 +4,7 @@ from countdown import Countdown
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from threading import Thread, Lock, Event
-
+from functools import partial
 
 class Brelshaza:
     def __init__(self, countdown_label, meteor_label, floor_label):
@@ -22,6 +22,8 @@ class Brelshaza:
         self.next_meteor_sec = 0
         self.next_floor_min = 0
         self.next_floor_sec = 0
+        self.set_meteor_text(reset=True)
+        self.set_floor_text(reset=True)
 
     # start the timer in a thread
     def start_timer(self):
@@ -58,9 +60,9 @@ class Brelshaza:
             self.next_floor_min = 0
             self.next_floor_sec = 0
 
-            self.timer.set_text()
-            self.set_meteor_text(reset=True)
-            self.set_floor_text(reset=True)
+        self.timer.set_text()
+        self.set_meteor_text(reset=True)
+        self.set_floor_text(reset=True)
 
     # calculate and display the next time meteors will drop (1 minute)
     def drop_meteor(self):
@@ -115,14 +117,14 @@ class Brelshaza:
     # re-set the text for the next meteor time
     def set_meteor_text(self, reset=False):
         if reset:
-            self.meteor_label.setText("")
+            self.meteor_label.setText("<h3></h3>")
         else:
             self.meteor_label.setText(f"<h3>Next meteor drops at: {self.next_meteor_min:02d}:{self.next_meteor_sec:02d}</h3>")
 
     # re-set the text for next floor time
     def set_floor_text(self, reset=False):
         if reset:
-            self.floor_label.setText("")
+            self.floor_label.setText("<h3></h3>")
         else:
             self.floor_label.setText(f"<h3>Floors are restored at: {self.next_floor_min:02d}:{self.next_floor_sec:02d}</h3>")
 
@@ -134,7 +136,9 @@ def main():
     layout = QVBoxLayout()
     layout.setAlignment(Qt.AlignmentFlag.AlignTop)
     window.setWindowTitle("Brelshaza Gate 6 Helper")
-    window.setGeometry(100, 100, 300, 100)
+    window.setGeometry(100, 100, 300, 216)
+    window.setMinimumWidth(211)
+    window.setMaximumSize(300, 216)
 
     # make the text labels and center-align them
     countdown_label = QLabel("")
