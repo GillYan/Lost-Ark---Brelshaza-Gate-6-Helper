@@ -20,7 +20,9 @@ Although the program does not currently help the user decide where to drop the m
 time to prepare themselves for the next incoming mechanic.
 
 ## How to use
-Start the program by navigating to the directory using a terminal and running the program with the command
+Start the program by running the helper.exe executable in the Brelshaza Gate 6 Helper folder or by navigating to the directory using a terminal and running the program with the command:
+
 > python helper.py
+
 The user only needs to click on the start button when the boss fight begins and click on the corresponding buttons to tell the 
 program when a yellow meteor drops and when the floor breaks.
