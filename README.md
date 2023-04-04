@@ -26,3 +26,8 @@ Start the program by running the helper.exe executable in the Brelshaza Gate 6 H
 
 The user only needs to click on the start button when the boss fight begins and click on the corresponding buttons to tell the 
 program when a yellow meteor drops and when the floor breaks.
+
+## Executable File
+Install pyinstaller if you want an executable file
+> pip install pyinstaller
+> pyinstaller --noconsole --onedir "helper.py"
