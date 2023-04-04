@@ -1,1 +1,5 @@
+easyocr==1.6.2
+numpy==1.21.6
+Pillow==9.5.0
+pynput==1.7.6
 PyQt6==6.4.2
