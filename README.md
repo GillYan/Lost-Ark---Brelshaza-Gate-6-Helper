@@ -29,5 +29,5 @@ program when a yellow meteor drops and when the floor breaks.
 
 ## Executable File
 Install pyinstaller if you want an executable file
-> pip install pyinstaller
+> pip install pyinstaller<br>
 > pyinstaller --noconsole --onedir "helper.py"
